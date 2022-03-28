@@ -1,2 +1,3 @@
 # QuickScripts
-Misc. scripts
+
+A home for all the miscilaneous scripts I write.
