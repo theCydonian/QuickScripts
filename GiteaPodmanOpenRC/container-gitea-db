@@ -1,0 +1,91 @@
+#!/sbin/openrc-run
+
+name="container-gitea-db"
+description="Database for Gitea server."
+
+pidfolder="/run/containers/mariadb/"
+pidfile="/run/containers/mariadb/${RC_SVCNAME}.pid"
+cidfile="/run/containers/mariadb/${RC_SVCNAME}.ctr-id"
+
+command="/usr/bin/podman"
+command_args="start"
+stop_args="stop --cidfile ${cidfile}"
+
+command_user="gitea"
+command_group="gitea"
+
+depend() {
+	want net
+	after net.online
+}
+
+check_and_repair() {
+    if [ ! -d ${pidfolder} ]; then
+        mkdir --parents ${pidfolder}
+    fi
+    chown ${command_user}: ${pidfolder}
+    
+    if [ ! -f ${cidfile} ]; then
+        repair
+    else
+        procs=$(runuser ${command_user} --command="/usr/bin/podman ps -aq --filter id=$(cat ${cidfile})")
+
+        if [ ! "${procs}" ]; then 
+            repair
+        fi
+    fi
+}
+
+repair() {
+    if [ -f ${cidfile} ]; then
+        rm ${cidfile}
+    fi
+    if [ -f ${pidfile} ]; then
+        rm ${pidfile}
+    fi
+    run_command="/usr/bin/podman run \
+          --conmon-pidfile ${pidfile} \
+          --cidfile ${cidfile} \
+          --cgroups=no-conmon \
+          --restart always \
+          --replace \
+          --detach \
+          --tty \
+          --env MARIADB_RANDOM_ROOT_PASSWORD=yes \
+          --env MARIADB_DATABASE=gitea \
+          --env MARIADB_USER=gitea \
+          --env MARIADB_PASSWORD=password \
+          --volume gitea-db-volume:/var/lib/mysql/:Z \
+          --label \"io.containers.autoupdate=registry\" \
+          --network gitea-net \
+          --name gitea-db \
+          docker.io/library/mariadb:10"
+
+    runuser ${command_user} --command="${run_command}"
+}
+
+start_pre() {
+    # check for container existance
+    # restart if not.
+    check_and_repair
+}
+
+start() {
+    ebegin "Starting container-gitea-db"
+
+    runuser ${command_user} --command="${command} ${command_args} $(cat ${cidfile})"
+
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping container-gitea-db"
+
+    procs=$(runuser ${command_user} --command="/usr/bin/podman ps -aq --filter id=$(cat ${cidfile})")
+
+      if [ "${procs}" ]; then 
+          runuser ${command_user} --command="${command} ${stop_args}"
+      fi
+
+    eend $?
+}
