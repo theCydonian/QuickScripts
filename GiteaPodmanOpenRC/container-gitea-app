@@ -51,11 +51,12 @@ repair() {
           --restart always \
           --detach \
           --tty \
-          --env DB_TYPE=mysql \
-          --env DB_HOST=gitea-db:3306 \
-          --env DB_NAME=gitea \
-          --env DB_USER=gitea \
-          --env DB_PASSWD=password \
+          --env GITEA__database__DB_TYPE=mysql \
+          --env GITEA__database__HOST=db:3306 \
+          --env GITEA__database__NAME=gitea \
+          --env GITEA__database__USER=gitea \
+          --env GITEA__database__PASSWD=gitea \
+          --env USER=gitea \
           --volume gitea-data-volume:/var/lib/gitea:Z \
           --volume gitea-config-volume:/etc/gitea:Z \
           --network gitea-net \

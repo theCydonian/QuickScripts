@@ -51,15 +51,15 @@ repair() {
           --replace \
           --detach \
           --tty \
-          --env MARIADB_RANDOM_ROOT_PASSWORD=yes \
-          --env MARIADB_DATABASE=gitea \
-          --env MARIADB_USER=gitea \
-          --env MARIADB_PASSWORD=password \
+          --env MYSQL_RANDOM_ROOT_PASSWORD=yes \
+          --env MYSQL_DATABASE=gitea \
+          --env MYSQL_USER=gitea \
+          --env MYSQL_PASSWORD=gitea \
           --volume gitea-db-volume:/var/lib/mysql/:Z \
           --label \"io.containers.autoupdate=registry\" \
           --network gitea-net \
-          --name gitea-db \
-          docker.io/library/mariadb:10"
+          --name db \
+          docker.io/library/mysql:8"
 
     runuser ${command_user} --command="${run_command}"
 }
